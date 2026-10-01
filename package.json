@@ -1,0 +1,27 @@
+{
+  "name": "qa-mailbox",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "QA Mailbox - serverless shared Gmail inbox split by plus-address aliases",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:all": "npm install && npm install --prefix client",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node --watch scripts/dev-server.js",
+    "dev:web": "npm run dev --prefix client",
+    "dev:vercel": "vercel dev",
+    "dev:netlify": "netlify dev",
+    "build": "npm run build --prefix client",
+    "gmail:auth": "node scripts/gmail-auth.js"
+  },
+  "dependencies": {
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7"
+  }
+}

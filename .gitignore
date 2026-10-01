@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build and test output
+dist/
+**/dist/
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Hosting platform state
+.vercel/
+.netlify/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# OS and editor metadata
+.DS_Store
+.idea/
+.vscode/
