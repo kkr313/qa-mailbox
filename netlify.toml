@@ -2,6 +2,9 @@
   command = "npm install --prefix client && npm run build"
   publish = "client/dist"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "MAILBOX_ADDRESS,DEV_API_PORT,GOOGLE_REDIRECT_URI"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"

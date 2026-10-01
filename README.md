@@ -116,8 +116,9 @@ The frontend output is written to `client/dist/`.
 1. Push this repository to GitHub.
 2. Import the repository in Netlify.
 3. Netlify reads `netlify.toml`; no build settings need to be entered manually.
-4. Add all production environment variables in **Site configuration > Environment variables**.
-5. Deploy the site.
+4. Add `JWT_SECRET`, `QA_USERS`, `MAILBOX_ADDRESS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REFRESH_TOKEN` in **Site configuration > Environment variables**.
+5. Do not add the local-only `DEV_API_PORT` or `GOOGLE_REDIRECT_URI` variables to Netlify.
+6. Deploy the site.
 
 Do not use manual drag-and-drop deployment of `client/dist`; the app also requires the serverless Gmail API function.
 
