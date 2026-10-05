@@ -17,5 +17,6 @@ export default async function handler(req, res) {
     result = errorResponse(err);
   }
 
+  for (const [name, value] of Object.entries(result.headers || {})) res.setHeader(name, value);
   res.status(result.status).json(result.body);
 }

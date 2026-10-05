@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, token } from '../api.js';
 import AliasManager from './AliasManager.jsx';
 import CopyButton from './CopyButton.jsx';
+import PageFooter from './PageFooter.jsx';
 
 const REFRESH_MS = 10000;
+const PAGE_SIZE = 25;
 const ALIAS_PATTERN = /^[a-z0-9][a-z0-9._-]{0,30}$/;
 const ENVIRONMENTS = [
   { value: 'dev', short: 'D', label: 'Development' },
@@ -114,8 +116,16 @@ export default function Mailbox({ user, mailbox, onLogout }) {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [currentPageToken, setCurrentPageToken] = useState('');
+  const [previousPageTokens, setPreviousPageTokens] = useState([]);
+  const [mobilePane, setMobilePane] = useState('inbox');
   const searchRef = useRef(search);
+  const currentPageTokenRef = useRef(currentPageToken);
+  const previousPageTokensRef = useRef(previousPageTokens);
   searchRef.current = search;
+  currentPageTokenRef.current = currentPageToken;
+  previousPageTokensRef.current = previousPageTokens;
 
   const [local, domain] = (mailbox || 'only4qause@gmail.com').split('@');
   const aliasEmail = selectedAlias ? `${local}+${selectedAlias}@${domain}` : '';
@@ -179,15 +189,27 @@ export default function Mailbox({ user, mailbox, onLogout }) {
   }
 
   const load = useCallback(
-    async ({ silent } = {}) => {
+    async ({
+      silent,
+      pageToken = currentPageTokenRef.current,
+      history = previousPageTokensRef.current,
+    } = {}) => {
       if (!selectedAlias && !smartSearch) {
         setMessages([]);
+        setSelectedId(null);
+        setNextPageToken(null);
         return;
       }
       if (!silent) setLoading(true);
       try {
-        const data = await api.messages(selectedAlias, searchRef.current, smartSearch);
+        const data = await api.messages(selectedAlias, searchRef.current, smartSearch, 'all', pageToken, PAGE_SIZE);
         setMessages(data.messages);
+        setSelectedId((current) => data.messages.some((message) => message.id === current)
+          ? current
+          : data.messages[0]?.id || null);
+        setNextPageToken(data.nextPageToken);
+        setCurrentPageToken(pageToken);
+        setPreviousPageTokens(history);
         setError('');
       } catch (err) {
         if (err.status === 401) {
@@ -204,13 +226,9 @@ export default function Mailbox({ user, mailbox, onLogout }) {
   );
 
   useEffect(() => {
-    const timer = setTimeout(() => load(), search ? 350 : 0);
+    const timer = setTimeout(() => load({ pageToken: '', history: [] }), search ? 350 : 0);
     return () => clearTimeout(timer);
   }, [search, load]);
-
-  useEffect(() => {
-    setSelectedId(null);
-  }, [selectedAlias]);
 
   useEffect(() => {
     if (selectedId && !messages.some((message) => message.id === selectedId)) setSelectedId(null);
@@ -236,12 +254,30 @@ export default function Mailbox({ user, mailbox, onLogout }) {
 
   function openMessage(messageId) {
     setSelectedId(messageId);
+    setMobilePane('message');
     setOpenedMessageIds((current) => {
       if (current.has(messageId)) return current;
       const next = new Set(current);
       next.add(messageId);
       return next;
     });
+  }
+
+  function showPreviousPage() {
+    const history = previousPageTokens.slice(0, -1);
+    load({ pageToken: previousPageTokens.at(-1) || '', history });
+  }
+
+  function showNextPage() {
+    load({
+      pageToken: nextPageToken,
+      history: [...previousPageTokens, currentPageToken],
+    });
+  }
+
+  function selectAlias(alias) {
+    setSelectedAlias(alias);
+    setMobilePane('inbox');
   }
 
   return (
@@ -330,7 +366,13 @@ export default function Mailbox({ user, mailbox, onLogout }) {
 
       {error && <p className="error banner">{error}</p>}
 
-      <main className="layout">
+      <nav className="mobile-pane-tabs" aria-label="Mailbox views">
+        <button type="button" className={mobilePane === 'aliases' ? 'active' : ''} onClick={() => setMobilePane('aliases')}>Generated</button>
+        <button type="button" className={mobilePane === 'inbox' ? 'active' : ''} onClick={() => setMobilePane('inbox')}>Inbox</button>
+        <button type="button" className={mobilePane === 'message' ? 'active' : ''} onClick={() => setMobilePane('message')} disabled={!selected}>Message</button>
+      </nav>
+
+      <main className={`layout mobile-pane-${mobilePane}`}>
         <AliasManager
           aliases={aliases}
           discoveredAliases={discoveredAliases}
@@ -338,7 +380,7 @@ export default function Mailbox({ user, mailbox, onLogout }) {
           mailboxDomain={domain}
           selectedAlias={selectedAlias}
           searchQuery={search}
-          onSelect={setSelectedAlias}
+          onSelect={selectAlias}
           onRemove={removeAlias}
         />
 
@@ -387,6 +429,17 @@ export default function Mailbox({ user, mailbox, onLogout }) {
               );
             })}
           </div>
+          {(selectedAlias || smartSearch) && (
+            <div className="mailbox-pagination" aria-label="Mailbox pages">
+              <button className="ghost small" type="button" onClick={showPreviousPage} disabled={loading || previousPageTokens.length === 0}>
+                Previous
+              </button>
+              <span>Page {previousPageTokens.length + 1}</span>
+              <button className="ghost small" type="button" onClick={showNextPage} disabled={loading || !nextPageToken}>
+                Next
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="detail" aria-label="Message">
@@ -433,12 +486,7 @@ export default function Mailbox({ user, mailbox, onLogout }) {
         </section>
       </main>
 
-      <footer className="app-footer">
-        Made with <span aria-label="love">❤️</span> by{' '}
-        <a href="https://sdet-karan.netlify.app/" target="_blank" rel="noreferrer">
-          Karan
-        </a>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { config, jwtSecret, httpError } from './config.js';
 
 let cachedUsers = null;
+const SESSION_COOKIE = 'qa_mailbox_session';
 
 /**
  * Login users come from the QA_USERS env var as "username:password" pairs, shared
@@ -55,9 +56,23 @@ export async function signToken(user) {
     .sign(jwtSecret());
 }
 
+export function sessionCookie(token) {
+  return `${SESSION_COOKIE}=${token}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=43200`;
+}
+
+export function clearSessionCookie() {
+  return `${SESSION_COOKIE}=; Path=/api; HttpOnly; SameSite=Strict; Max-Age=0`;
+}
+
+function cookieToken(headers) {
+  const cookie = headers.cookie || headers.Cookie || '';
+  const entry = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`));
+  return entry ? entry.slice(SESSION_COOKIE.length + 1) : null;
+}
+
 export async function requireAuth(headers) {
   const header = headers.authorization || headers.Authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = header.startsWith('Bearer ') ? header.slice(7) : cookieToken(headers);
   if (!token) throw httpError(401, 'Not authenticated');
 
   let payload;

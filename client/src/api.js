@@ -34,14 +34,23 @@ async function request(path, { method = 'GET', body } = {}) {
 
 export const api = {
   login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
   health: () => request('/health'),
-  messages: (alias, search, globalSearch = false, searchBy = 'all') => {
-    const params = new URLSearchParams();
+  allMailbox: ({ limit = 25, pageToken = '', from = '', to = '', timezoneOffset = 0 } = {}) => {
+    const params = new URLSearchParams({ limit: String(limit), timezoneOffset: String(timezoneOffset) });
+    if (pageToken) params.set('pageToken', pageToken);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    return request(`/mailbox/all?${params.toString()}`);
+  },
+  messages: (alias, search, globalSearch = false, searchBy = 'all', pageToken = '', limit = 25) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     if (alias) params.set('alias', alias);
     if (globalSearch) params.set('global', 'true');
     if (searchBy && searchBy !== 'all') params.set('searchBy', searchBy);
     if (search) params.set('search', search);
+    if (pageToken) params.set('pageToken', pageToken);
     return request(`/messages?${params.toString()}`);
   },
 };

@@ -168,26 +168,59 @@ function matchesSearch(message, lowered, searchBy) {
     .includes(lowered);
 }
 
-export async function listAliasMessages({ aliasEmail, limit = 25, search = '', searchBy = 'all' }) {
+async function fetchMessages(messageRefs, concurrency = 20) {
+  const messages = new Array(messageRefs.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < messageRefs.length) {
+      const index = nextIndex++;
+      messages[index] = normalizeMessage(await gmailGet(`/messages/${messageRefs[index].id}`, { format: 'full' }));
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, messageRefs.length) }, () => worker()));
+  return messages;
+}
+
+export async function listAliasMessagePage({
+  aliasEmail,
+  limit = 25,
+  search = '',
+  searchBy = 'all',
+  pageToken = '',
+  after = '',
+  before = '',
+}) {
   const terms = [];
   if (aliasEmail) terms.push(`to:${aliasEmail}`);
   const typedSearch = buildSearchTerm(search, searchBy);
   if (typedSearch) terms.push(typedSearch);
+  if (after) terms.push(`after:${after}`);
+  if (before) terms.push(`before:${before}`);
 
   const data = await gmailGet('/messages', {
     q: terms.join(' ').trim(),
-    maxResults: String(Math.min(Math.max(limit, 1), 50)),
+    maxResults: String(Math.min(Math.max(limit, 1), 500)),
+    ...(pageToken ? { pageToken } : {}),
   });
 
-  const messages = await Promise.all(
-    (data.messages || []).map(async (m) => normalizeMessage(await gmailGet(`/messages/${m.id}`, { format: 'full' })))
-  );
+  const messages = await fetchMessages(data.messages || []);
 
   const lowered = search.toLowerCase();
-  return messages
+  return {
+    messages: messages
     .filter((m) => {
       if (aliasEmail && !matchesAlias(m, aliasEmail)) return false;
       return matchesSearch(m, lowered, searchBy);
     })
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort((a, b) => b.date.localeCompare(a.date)),
+    nextPageToken: data.nextPageToken || null,
+    resultSizeEstimate: Number(data.resultSizeEstimate) || 0,
+  };
+}
+
+export async function listAliasMessages(options) {
+  const page = await listAliasMessagePage(options);
+  return page.messages;
 }

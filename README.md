@@ -24,6 +24,16 @@ A shared QA inbox for Gmail plus-address aliases. Team members sign in with one 
 
 Generated aliases and opened-message state are stored in browser `localStorage`. They are not synchronized across browsers. Email content is always read from the shared Gmail mailbox.
 
+## Gmail-derived mailbox API
+
+After signing in to the app, open this user interface directly in the same browser:
+
+```text
+/all
+```
+
+The UI reads Gmail directly through `/api/mailbox/all` and groups up to 500 recent incoming messages by plus-address alias. It does not use a database. An alias cannot appear until Gmail has received at least one message addressed to it.
+
 ## Requirements
 
 - Node.js 20 or newer

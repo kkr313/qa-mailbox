@@ -18,7 +18,7 @@ export default async (request) => {
     result = errorResponse(err);
   }
 
-  return Response.json(result.body, { status: result.status });
+  return Response.json(result.body, { status: result.status, headers: result.headers });
 };
 
 export const config = { path: '/api/*' };

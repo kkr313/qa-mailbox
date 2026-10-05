@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { api, token } from '../api.js';
+import PageFooter from './PageFooter.jsx';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, notice = '' }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,6 +34,8 @@ export default function Login({ onLogin }) {
           </div>
         </div>
 
+        {notice && <p className="login-notice" role="status">{notice}</p>}
+
         <label htmlFor="username">Username</label>
         <input
           id="username"
@@ -59,6 +62,7 @@ export default function Login({ onLogin }) {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+      <PageFooter />
     </div>
   );
 }

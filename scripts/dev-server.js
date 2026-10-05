@@ -26,7 +26,7 @@ const server = http.createServer(async (req, res) => {
     result = errorResponse(err);
   }
 
-  res.writeHead(result.status, { 'content-type': 'application/json' });
+  res.writeHead(result.status, { 'content-type': 'application/json', ...result.headers });
   res.end(JSON.stringify(result.body));
 });
 
