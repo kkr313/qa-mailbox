@@ -53,7 +53,10 @@ h2 {
 
 /* --- shared controls --- */
 button {
-  font: inherit;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
   border-radius: 11px;
   border: 1px solid var(--border);
@@ -90,7 +93,6 @@ button.ghost:hover:not(:disabled) {
 
 button.small {
   padding: 4px 10px;
-  font-size: 12px;
 }
 
 input {
@@ -257,7 +259,8 @@ label {
   border: 1px solid var(--border);
   border-radius: 11px;
   color: var(--text);
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -334,6 +337,7 @@ label {
   border-radius: 11px;
   background: color-mix(in srgb, var(--surface-2) 86%, transparent);
   color: var(--text);
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -381,7 +385,7 @@ label {
 
 .header-lane {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(190px, 0.55fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
   align-items: center;
   gap: 4px;
   min-width: 0;
@@ -459,8 +463,7 @@ label {
 }
 
 .topbar button.ghost.small {
-  font-size: 14px;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .copy-btn.copied {
@@ -557,14 +560,12 @@ label {
 
 .environment-option {
   height: 28px;
-  min-width: 20px;
-  padding: 0 3px;
+  min-width: 24px;
+  padding: 0 5px;
   border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
   color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
 }
 
 .environment-option:hover {
@@ -597,12 +598,10 @@ label {
 
 .alias-toolbar .random-alias-btn {
   padding: 0 6px;
-  font-size: 10px;
 }
 
 .alias-toolbar .clear-unused-btn {
   padding: 0 6px;
-  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -613,7 +612,6 @@ label {
   min-width: 68px !important;
   padding: 0 6px;
   margin: 0;
-  font-size: 12px;
 }
 
 .layout {
@@ -688,7 +686,6 @@ label {
 .header-otp .copy-btn {
   height: 28px;
   padding: 0 8px;
-  font-size: 11px;
 }
 
 .panel-body {
@@ -817,9 +814,8 @@ label {
 
 .alias-item-actions .copy-btn,
 .alias-item-actions .danger {
-  height: 26px;
+  height: 28px;
   padding: 0 7px;
-  font-size: 11px;
 }
 
 .alias-item-actions .copy-btn {
@@ -828,8 +824,8 @@ label {
 }
 
 .alias-item-actions .danger {
-  width: 26px;
-  min-width: 26px;
+  width: 28px;
+  min-width: 28px;
   padding: 0;
 }
 
@@ -1056,12 +1052,22 @@ button.ghost.danger {
   margin-top: 16px;
 }
 
+@media (max-width: 1366px) and (min-width: 1101px) {
+  .alias-text {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 280px;
+  }
+}
+
 @media (max-width: 1100px) {
   .header-lane {
-    grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.5fr);
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
   .topbar-actions {
-    grid-template-columns: minmax(60px, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
   }
   .layout {
     grid-template-columns: minmax(280px, 380px) 1fr;
@@ -1138,8 +1144,10 @@ button.ghost.danger {
     min-width: 0;
   }
   .layout {
-    display: block;
-    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     width: 100%;
   }
   .mobile-pane-tabs {
@@ -1158,7 +1166,6 @@ button.ghost.danger {
     border-color: transparent;
     background: transparent;
     color: var(--muted);
-    font-weight: 700;
   }
   .mobile-pane-tabs button.active {
     color: #0b1a27;
@@ -1168,8 +1175,9 @@ button.ghost.danger {
   .layout > .list,
   .layout > .detail {
     width: 100%;
-    height: calc(100dvh - 280px);
-    min-height: 500px;
+    flex: 1;
+    height: auto;
+    min-height: 320px;
     max-height: none;
   }
   .layout.mobile-pane-aliases > .list,
@@ -1218,23 +1226,38 @@ button.ghost.danger {
   .alias-toolbar {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
     width: 100%;
   }
   .alias-toolbar-form {
     width: auto;
     min-width: 0;
   }
+  .alias-toolbar .random-alias-btn {
+    grid-row: 2;
+    grid-column: 1;
+  }
+  .alias-toolbar .clear-unused-btn {
+    grid-row: 2;
+    grid-column: 2;
+  }
   .topbar-actions {
     grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-auto-flow: row;
     gap: 4px;
   }
+  .topbar-actions .search-control {
+    grid-column: 1 / -1;
+  }
   .topbar-actions .refresh-btn {
+    grid-column: 2;
     width: auto;
     min-width: 78px;
     max-width: none;
   }
   .topbar-actions .logout-btn {
+    grid-column: 3;
     min-width: 52px;
   }
   .all-mailbox-header {
