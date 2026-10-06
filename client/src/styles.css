@@ -600,6 +600,12 @@ label {
   font-size: 10px;
 }
 
+.alias-toolbar .clear-unused-btn {
+  padding: 0 6px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 /* Keep the email-copy action compact while aligning baseline with other controls. */
 .alias > .copy-btn.ghost.small {
   height: 30px;
@@ -1124,7 +1130,7 @@ button.ghost.danger {
   .alias-toolbar {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     width: 100%;
   }
   .alias-toolbar-form {
@@ -1212,7 +1218,7 @@ button.ghost.danger {
   .alias-toolbar {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     width: 100%;
   }
   .alias-toolbar-form {

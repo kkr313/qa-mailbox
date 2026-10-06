@@ -120,6 +120,8 @@ export default function Mailbox({ user, mailbox, onLogout }) {
   const [currentPageToken, setCurrentPageToken] = useState('');
   const [previousPageTokens, setPreviousPageTokens] = useState([]);
   const [mobilePane, setMobilePane] = useState('inbox');
+  const [clearingUnused, setClearingUnused] = useState(false);
+  const [checkingAlias, setCheckingAlias] = useState(false);
   const searchRef = useRef(search);
   const currentPageTokenRef = useRef(currentPageToken);
   const previousPageTokensRef = useRef(previousPageTokens);
@@ -151,23 +153,49 @@ export default function Mailbox({ user, mailbox, onLogout }) {
     if (!selectedAlias && aliases.length) setSelectedAlias(aliases[0]);
   }, [aliases, selectedAlias]);
 
-  function addAlias(name) {
+  // Gmail only knows aliases that already received mail, so this catches in-use addresses.
+  async function aliasUsedInMailbox(alias) {
+    const data = await api.messages(alias, '', false, 'all', '', 1);
+    return data.messages.length > 0;
+  }
+
+  async function addAlias(name) {
     const baseName = normalizeAliasInput(name, local, domain);
     const alias = `${selectedEnvironment}_${baseName}`;
     if (!ALIAS_PATTERN.test(alias)) {
       setAliasError('Alias with environment must use valid characters and be 31 characters or fewer.');
-      return;
+      return 'invalid';
     }
     const existingAlias = aliases.find((item) => item.toLowerCase() === alias.toLowerCase());
     if (existingAlias) {
       setAliasError(`${local}+${existingAlias}@${domain} already exists.`);
       setSelectedAlias(existingAlias);
-      return;
+      return 'taken';
     }
+
+    setCheckingAlias(true);
+    try {
+      if (await aliasUsedInMailbox(alias)) {
+        setAliasError(`${local}+${alias}@${domain} is already used in the mailbox. Pick another name.`);
+        return 'taken';
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        token.clear();
+        onLogout();
+        return 'error';
+      }
+      setAliasError('Could not verify the alias against Gmail. Try again.');
+      return 'error';
+    } finally {
+      setCheckingAlias(false);
+    }
+
     setAliasError('');
     setAliases((prev) => [alias, ...prev]);
     setSelectedAlias(alias);
     setDraftAlias('');
+    return 'ok';
   }
 
   function removeAlias(alias) {
@@ -180,12 +208,14 @@ export default function Mailbox({ user, mailbox, onLogout }) {
     if (draftAlias.trim()) addAlias(draftAlias);
   }
 
-  function handleGenerateAlias() {
-    let candidate = randomAlias();
-    while (aliases.some((alias) => alias.toLowerCase() === `${selectedEnvironment}_${candidate}`.toLowerCase())) {
-      candidate = randomAlias();
+  async function handleGenerateAlias() {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      let candidate = randomAlias();
+      while (aliases.some((alias) => alias.toLowerCase() === `${selectedEnvironment}_${candidate}`.toLowerCase())) {
+        candidate = randomAlias();
+      }
+      if (await addAlias(candidate) !== 'taken') return;
     }
-    addAlias(candidate);
   }
 
   const load = useCallback(
@@ -285,6 +315,32 @@ export default function Mailbox({ user, mailbox, onLogout }) {
     setMobilePane('inbox');
   }
 
+  async function clearUnusedAliases() {
+    setClearingUnused(true);
+    setAliasError('');
+    try {
+      const data = await api.allMailbox({ limit: 500, timezoneOffset: new Date().getTimezoneOffset() });
+      const usedAliases = new Set(data.aliases.map((item) => item.alias.toLowerCase()));
+      const unused = aliases.filter((alias) => !usedAliases.has(alias.toLowerCase()));
+      if (!unused.length) {
+        setAliasError('No unused generated emails to clear.');
+        return;
+      }
+      setAliases((prev) => prev.filter((alias) => usedAliases.has(alias.toLowerCase())));
+      if (selectedAlias && !usedAliases.has(selectedAlias.toLowerCase())) setSelectedAlias(null);
+      setError('');
+    } catch (err) {
+      if (err.status === 401) {
+        token.clear();
+        onLogout();
+        return;
+      }
+      setError(err.message);
+    } finally {
+      setClearingUnused(false);
+    }
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -323,12 +379,27 @@ export default function Mailbox({ user, mailbox, onLogout }) {
                       placeholder="e.g. payment_reset"
                       aria-label="New alias name"
                     />
-                    <button className="ghost small" type="submit" disabled={!normalizedDraft || aliasExists}>
-                      Add
+                    <button className="ghost small" type="submit" disabled={!normalizedDraft || aliasExists || checkingAlias}>
+                      {checkingAlias ? '…' : 'Add'}
                     </button>
                   </form>
-                  <button className="ghost small random-alias-btn" type="button" onClick={handleGenerateAlias} title="Generate random alias">
+                  <button
+                    className="ghost small random-alias-btn"
+                    type="button"
+                    onClick={handleGenerateAlias}
+                    disabled={checkingAlias}
+                    title="Generate random alias"
+                  >
                     Random
+                  </button>
+                  <button
+                    className="ghost small clear-unused-btn"
+                    type="button"
+                    onClick={clearUnusedAliases}
+                    disabled={clearingUnused || !aliases.length}
+                    title="Remove generated emails that never received mail"
+                  >
+                    {clearingUnused ? 'Clearing…' : 'Clear unused'}
                   </button>
                 </span>
               </div>
