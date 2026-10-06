@@ -234,6 +234,17 @@ export default function Mailbox({ user, mailbox, onLogout }) {
     if (selectedId && !messages.some((message) => message.id === selectedId)) setSelectedId(null);
   }, [messages, selectedId]);
 
+  // Auto-selected messages are shown in the reading pane, so mark them opened too.
+  useEffect(() => {
+    if (!selectedId) return;
+    setOpenedMessageIds((current) => {
+      if (current.has(selectedId)) return current;
+      const next = new Set(current);
+      next.add(selectedId);
+      return next;
+    });
+  }, [selectedId]);
+
   useEffect(() => {
     function autoRefresh() {
       if (document.visibilityState === 'visible') load({ silent: true });
@@ -255,12 +266,6 @@ export default function Mailbox({ user, mailbox, onLogout }) {
   function openMessage(messageId) {
     setSelectedId(messageId);
     setMobilePane('message');
-    setOpenedMessageIds((current) => {
-      if (current.has(messageId)) return current;
-      const next = new Set(current);
-      next.add(messageId);
-      return next;
-    });
   }
 
   function showPreviousPage() {
