@@ -26,7 +26,12 @@ async function getAccessToken() {
     }),
   });
 
-  if (!res.ok) throw httpError(502, 'Could not refresh Gmail access token.');
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    console.error('Gmail token refresh failed', res.status, detail);
+    // invalid_grant => refresh token revoked/expired; re-run scripts/gmail-auth.js
+    throw httpError(502, `Could not refresh Gmail access token (${res.status}). ${detail.slice(0, 200)}`);
+  }
   const data = await res.json();
   accessToken = data.access_token;
   accessTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;

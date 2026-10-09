@@ -18,7 +18,7 @@ async function request(path, { method = 'GET', body } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    const error = new Error('Cannot reach API. Make sure dev server is running and API port 4213 is free.');
+    const error = new Error('Cannot reach the API. The request failed or timed out — check your connection and try again.');
     error.status = 0;
     throw error;
   }
